@@ -50,9 +50,19 @@ public class HelloWorld {
         }
 
         int numSimilarWords = 3;
+        boolean random = false;
 
         String str = "hello";
         while (!str.equals("--end")) {
+            if (str.equals("--random") || str.equals("--r") && similarityDetector != null) {
+                random = true;
+                str = similarityDetector.everyWord.get((int) (Math.random()*similarityDetector.everyWord.size()));
+            }
+            if (str.equals("")) {
+                System.out.print("> ");
+                str = sc.nextLine();
+                continue;
+            }
             String def = defineWord(str);
             if (def == null && similarityDetector != null) {
                 System.out.println("No definitions for '" + str + "' were found :(");
@@ -61,12 +71,18 @@ public class HelloWorld {
                 for (int i=0; i<numSimilarWords; i++) {
                     System.out.print(" " + similarWords[i]);
                 }
-                System.out.println();
+                System.out.println("\n-- Please note that not every word is in the dictionary --\n");
             } else if (def == null) {
-                System.out.println("No definitions for '" + str + "' were found :(");
+                if (random) {
+                    str = "--random";
+                    continue;
+                } else {
+                    System.out.println("No definitions for '" + str + "' were found :(");
+                }
             } else {
                 System.out.println(def);
             }
+            random = false;
             System.out.println("Enter '--end' to stop.");
             System.out.print("What word would you like to define?\n> ");
             str = sc.nextLine();
@@ -118,28 +134,20 @@ class StringSimilarity {
         }
         bf.close();
     }
-    /**
-     * Calculates the similarity (a number within 0 and 1) between two strings.
-     */
     public static double similarity(String s1, String s2) {
         String longer = s1, shorter = s2;
-        if (s1.length() < s2.length()) { // longer should always have greater length
+        if (s1.length() < s2.length()) {
             longer = s2;
             shorter = s1;
         }
         int longerLength = longer.length();
         if (longerLength == 0) {
-            return 1.0; /* both strings are zero length */
+            return 1.0;
         }
-    /* // If you have Apache Commons Text, you can use it to calculate the edit distance:
-    LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
-    return (longerLength - levenshteinDistance.apply(longer, shorter)) / (double) longerLength; */
         return (longerLength - editDistance(longer, shorter)) / (double) longerLength;
 
     }
 
-    // Example implementation of the Levenshtein Edit Distance
-    // See http://rosettacode.org/wiki/Levenshtein_distance#Java
     public static int editDistance(String s1, String s2) {
         s1 = s1.toLowerCase();
         s2 = s2.toLowerCase();
@@ -165,11 +173,6 @@ class StringSimilarity {
                 costs[s2.length()] = lastValue;
         }
         return costs[s2.length()];
-    }
-
-    public static void printSimilarity(String s, String t) {
-        System.out.println(String.format(
-                "%.3f is the similarity between \"%s\" and \"%s\"", similarity(s, t), s, t));
     }
 
     public String[] findClosest(String base, int howMany) {
