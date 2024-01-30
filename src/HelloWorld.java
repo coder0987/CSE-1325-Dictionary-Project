@@ -1,4 +1,3 @@
-import java.lang.reflect.Array;
 import java.net.*;
 import java.io.*;
 import org.json.*;
@@ -53,12 +52,17 @@ public class HelloWorld {
         boolean random = false;
 
         String str = "hello";
-        while (!str.equals("--end")) {
+        while (!str.equals("--end") && !str.equals("--e")) {
             if (str.equals("--random") || str.equals("--r") && similarityDetector != null) {
                 random = true;
                 str = similarityDetector.everyWord.get((int) (Math.random()*similarityDetector.everyWord.size()));
+            } else if (str.equals("--help") || str.equals("--h")) {
+                System.out.println("--end or --e: end the program");
+                System.out.println("--help or --h: list all commands");
+                System.out.println("--random or --r: define a random word");
+                continue;
             }
-            if (str.equals("")) {
+            if (str.isEmpty()) {
                 System.out.print("> ");
                 str = sc.nextLine();
                 continue;
@@ -83,7 +87,7 @@ public class HelloWorld {
                 System.out.println(def);
             }
             random = false;
-            System.out.println("Enter '--end' to stop.");
+            System.out.println("Enter '--end' to stop. Use '--help' for a list of all commands");
             System.out.print("What word would you like to define?\n> ");
             str = sc.nextLine();
         }
