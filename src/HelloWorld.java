@@ -60,29 +60,30 @@ public class HelloWorld {
                 System.out.println("--end or --e: end the program");
                 System.out.println("--help or --h: list all commands");
                 System.out.println("--random or --r: define a random word");
+                System.out.print("> ");
+                str = sc.nextLine();
                 continue;
-            }
-            if (str.isEmpty()) {
+            } else if (str.isEmpty()) {
                 System.out.print("> ");
                 str = sc.nextLine();
                 continue;
             }
             String def = defineWord(str);
             if (def == null && similarityDetector != null) {
-                System.out.println("No definitions for '" + str + "' were found :(");
-                String[] similarWords = similarityDetector.findClosest(str, numSimilarWords);
-                System.out.print("Possible Matches:");
-                for (int i=0; i<numSimilarWords; i++) {
-                    System.out.print(" " + similarWords[i]);
-                }
-                System.out.println("\n-- Please note that not every word is in the dictionary --\n");
-            } else if (def == null) {
                 if (random) {
                     str = "--random";
                     continue;
                 } else {
                     System.out.println("No definitions for '" + str + "' were found :(");
+                    String[] similarWords = similarityDetector.findClosest(str, numSimilarWords);
+                    System.out.print("Possible Matches:");
+                    for (int i = 0; i < numSimilarWords; i++) {
+                        System.out.print(" " + similarWords[i]);
+                    }
+                    System.out.println("\n-- Please note that not every word is in the dictionary --\n");
                 }
+            } else if (def == null) {
+                System.out.println("No definitions for '" + str + "' were found :(");
             } else {
                 System.out.println(def);
             }
