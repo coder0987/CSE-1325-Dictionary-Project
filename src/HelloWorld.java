@@ -147,6 +147,9 @@ class StringSimilarity {
         }
         bf.close();
     }
+
+    //This function is from user acdcjunior on Stack Overflow
+    //https://stackoverflow.com/questions/955110/similarity-string-comparison-in-java
     public static double similarity(String s1, String s2) {
         String longer = s1, shorter = s2;
         if (s1.length() < s2.length()) {
@@ -161,6 +164,8 @@ class StringSimilarity {
 
     }
 
+    //This function is from user acdcjunior on Stack Overflow
+    //https://stackoverflow.com/questions/955110/similarity-string-comparison-in-java
     public static int editDistance(String s1, String s2) {
         s1 = s1.toLowerCase();
         s2 = s2.toLowerCase();
@@ -188,6 +193,7 @@ class StringSimilarity {
         return costs[s2.length()];
     }
 
+    //Compare one word with every word in the words.txt file and return the top howMany words
     public String[] findClosest(String base, int howMany) {
         ArrayList<StringScore> temp = new ArrayList<StringScore>();
         if (howMany == 0) {return null;}
