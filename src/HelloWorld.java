@@ -53,13 +53,19 @@ public class HelloWorld {
 
         String str = "hello";
         while (!str.equals("--end") && !str.equals("--e")) {
-            if (str.equals("--random") || str.equals("--r") && similarityDetector != null) {
+            if ((str.equals("--random") || str.equals("--r")) && similarityDetector != null) {
                 random = true;
                 str = similarityDetector.everyWord.get((int) (Math.random()*similarityDetector.everyWord.size()));
             } else if (str.equals("--help") || str.equals("--h")) {
                 System.out.println("--end or --e: end the program");
                 System.out.println("--help or --h: list all commands");
                 System.out.println("--random or --r: define a random word");
+                System.out.println("--hangman: play a game of hangman");
+                System.out.print("> ");
+                str = sc.nextLine();
+                continue;
+            } else if (str.equals("--hangman")) {
+                Hangman.playHangman(sc, similarityDetector);
                 System.out.print("> ");
                 str = sc.nextLine();
                 continue;
@@ -110,6 +116,8 @@ public class HelloWorld {
             System.out.print("What word would you like to define?\n> ");
             str = sc.nextLine();
         }
+
+        System.out.println("Thank you for using our dictionary!");
     }
     public static String defineWord(String word) {
         String baseURL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
@@ -157,6 +165,9 @@ class StringSimilarity {
         }
         bf.close();
     }
+
+    //This function is from user acdcjunior on Stack Overflow
+    //https://stackoverflow.com/questions/955110/similarity-string-comparison-in-java
     public static double similarity(String s1, String s2) {
         String longer = s1, shorter = s2;
         if (s1.length() < s2.length()) {
@@ -171,6 +182,8 @@ class StringSimilarity {
 
     }
 
+    //This function is from user acdcjunior on Stack Overflow
+    //https://stackoverflow.com/questions/955110/similarity-string-comparison-in-java
     public static int editDistance(String s1, String s2) {
         s1 = s1.toLowerCase();
         s2 = s2.toLowerCase();
@@ -198,6 +211,7 @@ class StringSimilarity {
         return costs[s2.length()];
     }
 
+    //Compare one word with every word in the words.txt file and return the top howMany words
     public String[] findClosest(String base, int howMany) {
         ArrayList<StringScore> temp = new ArrayList<StringScore>();
         if (howMany == 0) {return null;}
@@ -253,4 +267,67 @@ class SaySomething {
 			str = br.readLine();
 		}
 	}
+}
+
+class Hangman {
+    public static void playHangman(Scanner sc, StringSimilarity similarityDetector) {
+        System.out.println("Welcome to Hangman!");
+
+        char[] usedLetters = new char[26];
+        String game = Hangman.getRandomAlphabetic(similarityDetector);
+        int numGuesses = 8;
+
+        String currentGuess = "";
+        for (int i=0; i<game.length(); i++) {
+            currentGuess += "_";
+        }
+        while (numGuesses > 0 && !currentGuess.equals(game)) {
+            System.out.println("You have " + numGuesses + " guesses remaining.\nUsed letters:");
+            for (char c : usedLetters) {if (c != 0) {System.out.print(c);}}
+            System.out.println();
+            System.out.print(currentGuess + "\n> ");
+            String letter = sc.nextLine();
+            char guess = letter.toLowerCase().charAt(0);
+            if (Character.isLetter(guess) && usedLetters[guess - 'a'] == 0) {
+                usedLetters[guess - 'a'] = guess;
+                boolean correctGuess = false;
+                for (int i=0; i<game.length(); i++) {
+                    if (game.toLowerCase().charAt(i) == guess) {
+                        currentGuess = currentGuess.substring(0,i) + guess + currentGuess.substring(i+1);
+                        correctGuess = true;
+                    }
+                }
+                if (!correctGuess) {
+                    numGuesses--;
+                }
+            }
+        }
+        if (currentGuess.equals(game)) {
+            System.out.println("Great job! You got the word with " + (numGuesses) + " tr" + (numGuesses == 1 ? "y" : "ies") + " remaining");
+        } else {
+            System.out.println("Good try! The Word was " + game);
+        }
+        System.out.println(HelloWorld.defineWord(game));
+    }
+    private static String getRandomAlphabetic(StringSimilarity ss) {
+        String str;
+
+        boolean pass;
+        do {
+            str = ss.everyWord.get((int) (Math.random()*ss.everyWord.size()));
+            char[] arr = str.toCharArray();
+            pass = true;
+            for (char c : arr) {
+                if (!Character.isLetter(c)) {
+                    pass = false;
+                }
+            }
+            String def = HelloWorld.defineWord(str);
+            if (def == null) {
+                //Make sure there's a definition to the word
+                pass = false;
+            }
+        } while (!pass);
+        return str;
+    }
 }
