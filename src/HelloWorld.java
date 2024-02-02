@@ -42,7 +42,7 @@ public class HelloWorld {
 
         StringSimilarity similarityDetector = null;
         try {
-            similarityDetector = new StringSimilarity("out/production/CSE 1325/words.txt");
+            similarityDetector = new StringSimilarity("src/words.txt");
             System.out.println(similarityDetector.everyWord.size() + " words loaded");
         } catch (IOException e) {
             System.out.println("Unable to process similar words: " + e);
@@ -52,7 +52,13 @@ public class HelloWorld {
         boolean random = false;
 
         String str = "hello";
+
         while (!str.equals("--end") && !str.equals("--e")) {
+            // Handle strings with multiple words.
+            String[] temp = str.split(" ");
+            if (temp.length > 1)
+                str = temp[0];
+
             if ((str.equals("--random") || str.equals("--r")) && similarityDetector != null) {
                 random = true;
                 str = similarityDetector.everyWord.get((int) (Math.random()*similarityDetector.everyWord.size()));
@@ -69,11 +75,18 @@ public class HelloWorld {
                 System.out.print("> ");
                 str = sc.nextLine();
                 continue;
+            } else if (str.equals("--say") || str.equals("--s") && temp.length > 1) {
+                try {new SaySomething(temp[1]);}
+                    catch (IOException e){ System.out.println("File not found."); }
+                System.out.print("> ");
+                str = sc.nextLine();
+                continue;
             } else if (str.isEmpty()) {
                 System.out.print("> ");
                 str = sc.nextLine();
                 continue;
             }
+
             String def = defineWord(str);
             if (def == null && similarityDetector != null) {
                 if (random) {
@@ -221,6 +234,7 @@ class StringSimilarity {
     }
 
 }
+
 class StringScore {
     String string;
     int score;
@@ -235,6 +249,18 @@ class StringScore {
 
     public String getString() {
         return string;
+    }
+}
+
+class SaySomething {
+    public SaySomething(String s) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(s));
+        String str = br.readLine();
+        while(str != null)
+        {
+            System.out.println(str);
+            str = br.readLine();
+        }
     }
 }
 
