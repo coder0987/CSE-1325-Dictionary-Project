@@ -53,11 +53,33 @@ public class HelloWorld {
 
         String str = "hello";
 
+        // Deal with inputs of multiple words.
         while (!str.equals("--end") && !str.equals("--e")) {
             // Handle strings with multiple words.
             String[] temp = str.split(" ");
-            if (temp.length > 1)
+            if (temp.length > 1) {
                 str = temp[0];
+                if (str.equals("--say") || str.equals("--s")) {
+                    new SaySomething(temp, similarityDetector);
+                    System.out.print("> ");
+                    str = sc.nextLine();
+                    continue;
+                }
+
+                for(int i = 0; i < temp.length; i++)
+                    if(!similarityDetector.checkWord(temp[i]))
+                    {
+                        String[] sugs = similarityDetector.findClosest(temp[i], numSimilarWords);
+                        System.out.print(temp[i] + ":");
+                        for(int w = 0; w < sugs.length; w++)
+                            System.out.print(" " + sugs[w]);
+                        System.out.println();
+                    }
+
+                System.out.print("> ");
+                str = sc.nextLine();
+                continue;
+	        }
 
             if ((str.equals("--random") || str.equals("--r")) && similarityDetector != null) {
                 random = true;
@@ -72,12 +94,6 @@ public class HelloWorld {
                 continue;
             } else if (str.equals("--hangman")) {
                 Hangman.playHangman(sc, similarityDetector);
-                System.out.print("> ");
-                str = sc.nextLine();
-                continue;
-            } else if (str.equals("--say") || str.equals("--s") && temp.length > 1) {
-                try {new SaySomething(temp[1]);}
-                    catch (IOException e){ System.out.println("File not found."); }
                 System.out.print("> ");
                 str = sc.nextLine();
                 continue;
@@ -233,6 +249,14 @@ class StringSimilarity {
         return returnArr;
     }
 
+    public boolean checkWord(String w) {
+        for(int i = 0; i < everyWord.size(); i++)
+        {
+            if(w.equals(everyWord.get(i)))
+                return true;
+        }
+        return false;
+    }
 }
 
 class StringScore {
@@ -253,14 +277,17 @@ class StringScore {
 }
 
 class SaySomething {
-    public SaySomething(String s) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(s));
-        String str = br.readLine();
-        while(str != null)
-        {
-            System.out.println(str);
-            str = br.readLine();
+    public SaySomething(String[] s, StringSimilarity sd) {
+        try{
+            BufferedReader br = new BufferedReader(new FileReader(s[1]));
+            String str = br.readLine();
+            while(str != null)
+            {
+                System.out.println(str);
+                str = br.readLine();
+            }
         }
+            catch (IOException e) { System.out.println("oof"); }
     }
 }
 
