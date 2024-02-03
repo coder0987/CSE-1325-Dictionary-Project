@@ -56,23 +56,25 @@ public class HelloWorld {
         // Deal with inputs of multiple words.
         while (!str.equals("--end") && !str.equals("--e")) {
             // Handle strings with multiple words.
-            String[] temp = str.split(" ");
-            if (temp.length > 1) {
-                str = temp[0];
-                if (str.equals("--say") || str.equals("--s")) {
-                    new SaySomething(temp, similarityDetector);
+            String[] wordsInputed = str.split(" ");
+            if (wordsInputed.length > 1) {
+                str = wordsInputed[0];
+
+                if (str.equals("--check") || str.equals("--c")) {
+                    new CheckFile(wordsInputed[1], similarityDetector);
                     System.out.print("> ");
                     str = sc.nextLine();
                     continue;
                 }
-
-                for(int i = 0; i < temp.length; i++)
+                
+                // If no option was specified then check the spelling of the words entered.
+                for(String word : temp)
                     if(!similarityDetector.checkWord(temp[i]))
                     {
-                        String[] sugs = similarityDetector.findClosest(temp[i], numSimilarWords);
-                        System.out.print(temp[i] + ":");
-                        for(int w = 0; w < sugs.length; w++)
-                            System.out.print(" " + sugs[w]);
+                        String[] sugs = similarityDetector.findClosest(word, numSimilarWords);
+                        System.out.print(word + ":");
+                        for(String sug : sugs)
+                            System.out.print(" " + sug);
                         System.out.println();
                     }
 
@@ -89,6 +91,7 @@ public class HelloWorld {
                 System.out.println("--help or --h: list all commands");
                 System.out.println("--random or --r: define a random word");
                 System.out.println("--hangman: play a game of hangman");
+                System.out.println("--check or --c _file_: check file for spelling errors");
                 System.out.print("> ");
                 str = sc.nextLine();
                 continue;
@@ -276,18 +279,40 @@ class StringScore {
     }
 }
 
-class SaySomething {
-    public SaySomething(String[] s, StringSimilarity sd) {
-        try{
-            BufferedReader br = new BufferedReader(new FileReader(s[1]));
-            String str = br.readLine();
-            while(str != null)
-            {
-                System.out.println(str);
-                str = br.readLine();
-            }
+class CheckFile {
+    BufferedReader br = null;
+    StringSimilarity sd = null;
+    public CheckFile(String fname, StringSimilarity simDetect) {
+        sd = simDetect;
+        try {
+            br = new BufferedReader(new FileReader(fname));
+            check();
         }
-            catch (IOException e) { System.out.println("oof"); }
+        catch (IOException e) 
+            { System.out.println("File " + fname + " could not be opened."); }
+    }
+
+    private void check()
+    {
+        String str = null;
+        try {
+
+        while((str = br.readLine()) != null)
+        {
+            String[] words = str.split(" ");
+            for(String word : words)
+                if(!sd.checkWord(word.toLowerCase().replaceAll("[!?,.:;\"\']", "")))
+                {
+                    String[] sugs = sd.findClosest(word, 3);
+                    System.out.print(word + ":");
+                    for(String sug : sugs)
+                        System.out.print(" " + sug);
+                    System.out.println();
+                }
+        }
+
+        } catch (IOException e) 
+            { System.out.println("Failed to read file."); }
     }
 }
 
