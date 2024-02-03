@@ -35,7 +35,62 @@ class URLConnectionReader {
     }
 }
 
+interface Command {
+    void execute(String[] args, StringSimilarity sd, Scanner sc);
+}
+
+class Option {
+    public String longForm, shortForm;
+    public Command command;
+
+    public Option(String lf, String sf, Command cmd)
+        { longForm = lf; shortForm = sf; command = cmd; }
+}
+
 public class HelloWorld {
+
+    static int numSimilarWords = 3;
+    static boolean exitProgram = false;
+    static String[] inputWords = { "hello" };
+
+    static Command spellCheckFile = (file, sd, sc) -> {
+        new CheckFile(file[1], sd);
+    };
+
+    static Command getRandom = (args, sd, sc) -> {
+        String tmpDef = null, ranWord;
+        while(tmpDef == null)
+        {
+            ranWord = sd.everyWord.get((int) (Math.random() * sd.everyWord.size()));
+            tmpDef = defineWord(ranWord);
+        }
+        System.out.println(tmpDef);
+    };
+
+    static Command showHelp = (args, sd, sc) -> {
+        System.out.println("--end or --e: end the program");
+        System.out.println("--help or --h: list all commands");
+        System.out.println("--random or --r: define a random word");
+        System.out.println("--hangman: play a game of hangman");
+        System.out.println("--check _file_ or --c _file_: check file for spelling errors");
+    };
+
+    static Command hangman = (args, sd, sc) -> {
+        Hangman.playHangman(sc, sd);
+    };
+
+    static Command endProg = (args, sd, sc) -> {
+        exitProgram = true;
+    };
+
+    static Option[] options = {
+        new Option("--check", "--c", spellCheckFile),
+        new Option("--random", "--r", getRandom),
+        new Option("--help", "--h", showHelp),
+        new Option("--hangman", "--hm", hangman),
+        new Option("--end", "--e", endProg)
+    };
+
     public static void main(String[] args) {
         System.out.println("Define any word! Loading...");
         Scanner sc = new Scanner(System.in); //System.in is a standard input stream
@@ -46,30 +101,33 @@ public class HelloWorld {
             System.out.println(similarityDetector.everyWord.size() + " words loaded");
         } catch (IOException e) {
             System.out.println("Unable to process similar words: " + e);
+            exitProgram = true; // What are we going to do if we can't compare words?
         }
 
-        int numSimilarWords = 3;
-        boolean random = false;
+        mainloop:
+        while (!exitProgram) {
+            boolean optionRan = false;
 
-        String str = "hello";
+            System.out.println("Enter '--end' to stop. Use '--help' for a list of all commands");
+            System.out.println("What word would you like to define?");
+            System.out.print("> ");
+            inputWords = sc.nextLine().split(" ");
 
-        // Deal with inputs of multiple words.
-        while (!str.equals("--end") && !str.equals("--e")) {
-            // Handle strings with multiple words.
-            String[] wordsInputed = str.split(" ");
-            if (wordsInputed.length > 1) {
-                str = wordsInputed[0];
-
-                if (str.equals("--check") || str.equals("--c")) {
-                    new CheckFile(wordsInputed[1], similarityDetector);
-                    System.out.print("> ");
-                    str = sc.nextLine();
-                    continue;
+            for(Option option : options)
+                if(option.longForm.equals(inputWords[0]) || option.shortForm.equals(inputWords[0]))
+                {
+                    option.command.execute(inputWords, similarityDetector, sc);
+                    continue mainloop;
                 }
-                
-                // If no option was specified then check the spelling of the words entered.
-                for(String word : temp)
-                    if(!similarityDetector.checkWord(temp[i]))
+
+            /* Default behavior */
+
+            // Spell check words that the user inputs.
+            // Only if the user inputs multiple words.
+            if(inputWords.length > 1)
+            {
+                for(String word : inputWords)
+                    if(!similarityDetector.checkWord(word))
                     {
                         String[] sugs = similarityDetector.findClosest(word, numSimilarWords);
                         System.out.print(word + ":");
@@ -77,58 +135,28 @@ public class HelloWorld {
                             System.out.print(" " + sug);
                         System.out.println();
                     }
-
-                System.out.print("> ");
-                str = sc.nextLine();
-                continue;
-	        }
-
-            if ((str.equals("--random") || str.equals("--r")) && similarityDetector != null) {
-                random = true;
-                str = similarityDetector.everyWord.get((int) (Math.random()*similarityDetector.everyWord.size()));
-            } else if (str.equals("--help") || str.equals("--h")) {
-                System.out.println("--end or --e: end the program");
-                System.out.println("--help or --h: list all commands");
-                System.out.println("--random or --r: define a random word");
-                System.out.println("--hangman: play a game of hangman");
-                System.out.println("--check or --c _file_: check file for spelling errors");
-                System.out.print("> ");
-                str = sc.nextLine();
-                continue;
-            } else if (str.equals("--hangman")) {
-                Hangman.playHangman(sc, similarityDetector);
-                System.out.print("> ");
-                str = sc.nextLine();
-                continue;
-            } else if (str.isEmpty()) {
-                System.out.print("> ");
-                str = sc.nextLine();
-                continue;
             }
 
-            String def = defineWord(str);
-            if (def == null && similarityDetector != null) {
-                if (random) {
-                    str = "--random";
-                    continue;
-                } else {
-                    System.out.println("No definitions for '" + str + "' were found :(");
-                    String[] similarWords = similarityDetector.findClosest(str, numSimilarWords);
+            // If the user only inputs one word, then try to
+            // get the definition. Otherwise, list similar words.
+            else {
+                String def = defineWord(inputWords[0]);
+                if (def == null && similarityDetector != null) {
+                    System.out.println("No definitions for '" + inputWords[0] + "' were found :(");
+                    String[] similarWords = similarityDetector.findClosest(inputWords[0], numSimilarWords);
                     System.out.print("Possible Matches:");
                     for (int i = 0; i < numSimilarWords; i++) {
                         System.out.print(" " + similarWords[i]);
                     }
                     System.out.println("\n-- Please note that not every word is in the dictionary --\n");
                 }
-            } else if (def == null) {
-                System.out.println("No definitions for '" + str + "' were found :(");
-            } else {
-                System.out.println(def);
+                else if (def == null)
+                    System.out.println("No definitions for '" + inputWords[0] + "' were found :(");
+                else
+                    System.out.println(def);
+
             }
-            random = false;
-            System.out.println("Enter '--end' to stop. Use '--help' for a list of all commands");
-            System.out.print("What word would you like to define?\n> ");
-            str = sc.nextLine();
+
         }
 
         System.out.println("Thank you for using our dictionary!");
@@ -294,12 +322,12 @@ class CheckFile {
 
     private void check()
     {
-        String str = null;
+        String line = null;
         try {
 
-        while((str = br.readLine()) != null)
+        while((line = br.readLine()) != null)
         {
-            String[] words = str.split(" ");
+            String[] words = line.split(" ");
             for(String word : words)
                 if(!sd.checkWord(word.toLowerCase().replaceAll("[!?,.:;\"\']", "")))
                 {
