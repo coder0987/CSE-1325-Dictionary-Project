@@ -53,9 +53,7 @@ public class HelloWorld {
     static boolean exitProgram = false;
     static String[] inputWords = { "hello" };
 
-    static Command spellCheckFile = (file, sd, sc) -> {
-        new CheckFile(file[1], sd);
-    };
+    static Command spellCheckFile = (file, sd, sc) -> new CheckFile(file[1], sd);
 
     static Command getRandom = (args, sd, sc) -> {
         String tmpDef = null, ranWord;
@@ -281,9 +279,8 @@ class StringSimilarity {
     }
 
     public boolean checkWord(String w) {
-        for(int i = 0; i < everyWord.size(); i++)
-        {
-            if(w.equals(everyWord.get(i)))
+        for (String s : everyWord) {
+            if (w.equals(s))
                 return true;
         }
         return false;
@@ -325,22 +322,40 @@ class CheckFile {
         String line = null;
         try {
 
-        while((line = br.readLine()) != null)
-        {
-            String[] words = line.split(" ");
-            for(String word : words)
-                if(!sd.checkWord(word.toLowerCase().replaceAll("[!?,.:;\"\']", "")))
-                {
-                    String[] sugs = sd.findClosest(word, 3);
-                    System.out.print(word + ":");
-                    for(String sug : sugs)
-                        System.out.print(" " + sug);
-                    System.out.println();
+            while((line = br.readLine()) != null)
+            {
+                String[] words = line.split(" ");
+                for(String word : words) {
+                    String[] brokenWords = CheckFile.breakWord(word);
+                    for (String w: brokenWords) {
+                        if (w.isEmpty() || w.matches(".*\\d.*")) {
+                            continue;
+                        }
+                        if (!sd.checkWord(w)) {
+                            String[] sugs = sd.findClosest(w, 3);
+                            System.out.print(w + ":");
+                            for (String sug : sugs)
+                                System.out.print(" " + sug);
+                            System.out.println();
+                        }
+                    }
+
                 }
-        }
+            }
 
         } catch (IOException e) 
             { System.out.println("Failed to read file."); }
+    }
+    private static String[] breakWord(String word) {
+        //First, remove special characters
+        word = word.replaceAll("[\\\\!?&_,.:;{}()\\-\\[\\]*/+<>=\"\']", " ");
+        //Next, detect camel case
+        for (int i=word.length() - 1; i > 0; i--) {
+            if (Character.isLowerCase(word.charAt(i - 1)) && Character.isUpperCase(word.charAt(i))) {
+                word = word.substring(0,i) + " " + word.substring(i);
+            }
+        }
+        return word.toLowerCase().split(" ");
     }
 }
 
@@ -357,11 +372,12 @@ class Hangman {
             currentGuess += "_";
         }
         while (numGuesses > 0 && !currentGuess.equals(game)) {
-            System.out.println("You have " + numGuesses + " guesses remaining.\nUsed letters:");
+            System.out.println("You have " + numGuesses + " guess" + (numGuesses == 1 ? "" : "es") + " remaining.\nUsed letters:");
             for (char c : usedLetters) {if (c != 0) {System.out.print(c);}}
             System.out.println();
             System.out.print(currentGuess + "\n> ");
             String letter = sc.nextLine();
+            if (letter.isEmpty()) {continue;}
             char guess = letter.toLowerCase().charAt(0);
             if (Character.isLetter(guess) && usedLetters[guess - 'a'] == 0) {
                 usedLetters[guess - 'a'] = guess;
@@ -404,5 +420,30 @@ class Hangman {
             }
         } while (!pass);
         return str;
+    }
+}
+
+class ProgressBar {
+    int max;
+    int current;
+    public ProgressBar(int max) {
+        this.max = max;
+    }
+    public void step(int amount) {
+        current += amount;
+        double percentage = (double) current / max * 100;
+        String toPrint = "[";
+        for (int i=0; i < 10; i++) {
+            if (percentage >= (i+1)*10) {
+                toPrint += "=";
+            } else {
+                toPrint += " ";
+            }
+        }
+        System.out.print(toPrint + "] ");
+        System.out.printf("%.2f\r", percentage);
+    }
+    public void done() {
+        System.out.println("Done!                 ");
     }
 }
