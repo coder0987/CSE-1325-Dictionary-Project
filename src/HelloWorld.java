@@ -360,11 +360,12 @@ class CheckFile {
                 for(String word : words) {
                     String[] brokenWords = CheckFile.breakWord(word);
                     for (String w: brokenWords) {
-                        if (w.isEmpty() || w.matches(".*\\d.*")) {
+                        if (w.isEmpty() || w.matches(".*\\d.*") || w.length() == 1) {
                             continue;
                         }
                         if (!sd.checkWord(w)) {
                             String[] sugs = sd.findClosest(w, 3);
+                            pb.clear();
                             System.out.print(w + ":");
                             for (String sug : sugs)
                                 System.out.print(" " + sug);
@@ -381,7 +382,7 @@ class CheckFile {
     }
     private static String[] breakWord(String word) {
         //First, remove special characters
-        word = word.replaceAll("[\\\\!?&_,.:;{}()\\-\\[\\]*/+<>=\"\']", " ");
+        word = word.replaceAll("[\\\\!?&_,.:;{}|()\\-\\[\\]*/+<>=\"\']", " ");
         //Next, detect camel case
         for (int i=word.length() - 1; i > 0; i--) {
             if (Character.isLowerCase(word.charAt(i - 1)) && Character.isUpperCase(word.charAt(i))) {
@@ -478,6 +479,7 @@ class ProgressBar {
         System.out.printf("%.2f", percentage);
         System.out.print("%\r");
     }
+    public static void clear() { System.out.print("\r                     \r"); }
     public void done() {
         System.out.println("Done!                 ");
     }
