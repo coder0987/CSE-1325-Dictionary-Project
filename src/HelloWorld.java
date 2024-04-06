@@ -53,9 +53,7 @@ public class HelloWorld {
     static boolean exitProgram = false;
     static String[] inputWords = { "hello" };
 
-    static Command spellCheckFile = (file, sd, sc) -> {
-        new CheckFile(file[1], sd);
-    };
+    static Command spellCheckFile = (file, sd, sc) -> new CheckFile(file[1], sd);
 
     static Command getRandom = (args, sd, sc) -> {
         String tmpDef = null, ranWord;
@@ -101,7 +99,6 @@ public class HelloWorld {
             System.out.println(similarityDetector.everyWord.size() + " words loaded");
         } catch (IOException e) {
             System.out.println("Unable to process similar words: " + e);
-            exitProgram = true; // What are we going to do if we can't compare words?
         }
 
         mainloop:
@@ -113,8 +110,8 @@ public class HelloWorld {
             System.out.print("> ");
             inputWords = sc.nextLine().split(" ");
 
-            for(Option option : options)
-                if(option.longForm.equals(inputWords[0]) || option.shortForm.equals(inputWords[0]))
+            for (Option option : options)
+                if (option.longForm.equals(inputWords[0]) || option.shortForm.equals(inputWords[0]))
                 {
                     option.command.execute(inputWords, similarityDetector, sc);
                     continue mainloop;
@@ -124,22 +121,18 @@ public class HelloWorld {
 
             // Spell check words that the user inputs.
             // Only if the user inputs multiple words.
-            if(inputWords.length > 1)
-            {
-                for(String word : inputWords)
-                    if(!similarityDetector.checkWord(word))
-                    {
+            if (inputWords.length > 1) {
+                for (String word : inputWords)
+                    if (similarityDetector != null && !similarityDetector.checkWord(word)) {
                         String[] sugs = similarityDetector.findClosest(word, numSimilarWords);
                         System.out.print(word + ":");
                         for(String sug : sugs)
                             System.out.print(" " + sug);
                         System.out.println();
                     }
-            }
-
-            // If the user only inputs one word, then try to
-            // get the definition. Otherwise, list similar words.
-            else {
+            } else {
+                // If the user only inputs one word, then try to
+                // get the definition. Otherwise, list similar words.
                 String def = defineWord(inputWords[0]);
                 if (def == null && similarityDetector != null) {
                     System.out.println("No definitions for '" + inputWords[0] + "' were found :(");
@@ -149,12 +142,11 @@ public class HelloWorld {
                         System.out.print(" " + similarWords[i]);
                     }
                     System.out.println("\n-- Please note that not every word is in the dictionary --\n");
-                }
-                else if (def == null)
+                } else if (def == null) {
                     System.out.println("No definitions for '" + inputWords[0] + "' were found :(");
-                else
+                } else {
                     System.out.println(def);
-
+                }
             }
 
         }
@@ -316,9 +308,8 @@ class StringSimilarity {
     }
 
     public boolean checkWord(String w) {
-        for(int i = 0; i < everyWord.size(); i++)
-        {
-            if(w.equals(everyWord.get(i)))
+        for (String s : everyWord) {
+            if (w.equals(s))
                 return true;
         }
         return false;
@@ -345,10 +336,12 @@ class StringScore {
 class CheckFile {
     BufferedReader br = null;
     StringSimilarity sd = null;
+    ProgressBar pb = null;
     public CheckFile(String fname, StringSimilarity simDetect) {
         sd = simDetect;
         try {
             br = new BufferedReader(new FileReader(fname));
+            pb = new ProgressBar(ProgressBar.countLines(new File(fname)));
             check();
         }
         catch (IOException e) 
@@ -358,24 +351,44 @@ class CheckFile {
     private void check()
     {
         String line = null;
+
         try {
 
-        while((line = br.readLine()) != null)
-        {
-            String[] words = line.split(" ");
-            for(String word : words)
-                if(!sd.checkWord(word.toLowerCase().replaceAll("[!?,.:;\"\']", "")))
-                {
-                    String[] sugs = sd.findClosest(word, 3);
-                    System.out.print(word + ":");
-                    for(String sug : sugs)
-                        System.out.print(" " + sug);
-                    System.out.println();
+            while((line = br.readLine()) != null)
+            {
+                String[] words = line.split(" ");
+                for(String word : words) {
+                    String[] brokenWords = CheckFile.breakWord(word);
+                    for (String w: brokenWords) {
+                        if (w.isEmpty() || w.matches(".*\\d.*")) {
+                            continue;
+                        }
+                        if (!sd.checkWord(w)) {
+                            String[] sugs = sd.findClosest(w, 3);
+                            System.out.print(w + ":");
+                            for (String sug : sugs)
+                                System.out.print(" " + sug);
+                            System.out.println();
+                        }
+                    }
+
                 }
-        }
+                pb.step(1);
+            }
 
         } catch (IOException e) 
             { System.out.println("Failed to read file."); }
+    }
+    private static String[] breakWord(String word) {
+        //First, remove special characters
+        word = word.replaceAll("[\\\\!?&_,.:;{}()\\-\\[\\]*/+<>=\"\']", " ");
+        //Next, detect camel case
+        for (int i=word.length() - 1; i > 0; i--) {
+            if (Character.isLowerCase(word.charAt(i - 1)) && Character.isUpperCase(word.charAt(i))) {
+                word = word.substring(0,i) + " " + word.substring(i);
+            }
+        }
+        return word.toLowerCase().split(" ");
     }
 }
 
@@ -392,11 +405,12 @@ class Hangman {
             currentGuess += "_";
         }
         while (numGuesses > 0 && !currentGuess.equals(game)) {
-            System.out.println("You have " + numGuesses + " guesses remaining.\nUsed letters:");
+            System.out.println("You have " + numGuesses + " guess" + (numGuesses == 1 ? "" : "es") + " remaining.\nUsed letters:");
             for (char c : usedLetters) {if (c != 0) {System.out.print(c);}}
             System.out.println();
             System.out.print(currentGuess + "\n> ");
             String letter = sc.nextLine();
+            if (letter.isEmpty()) {continue;}
             char guess = letter.toLowerCase().charAt(0);
             if (Character.isLetter(guess) && usedLetters[guess - 'a'] == 0) {
                 usedLetters[guess - 'a'] = guess;
@@ -439,5 +453,51 @@ class Hangman {
             }
         } while (!pass);
         return str;
+    }
+}
+
+class ProgressBar {
+    int max;
+    int current;
+    public ProgressBar(int max) {
+        this.max = max;
+        System.out.print("[           ] 0%\r");
+    }
+    public void step(int amount) {
+        current += amount;
+        double percentage = (double) current / max * 100;
+        String toPrint = "[";
+        for (int i=0; i < 10; i++) {
+            if (percentage >= (i+1)*10) {
+                toPrint += "=";
+            } else {
+                toPrint += " ";
+            }
+        }
+        System.out.print(toPrint + "] ");
+        System.out.printf("%.2f", percentage);
+        System.out.print("%\r");
+    }
+    public void done() {
+        System.out.println("Done!                 ");
+    }
+
+    //Code from fhucho on stack overflow https://stackoverflow.com/questions/1277880/how-can-i-get-the-count-of-line-in-a-file-in-an-efficient-way
+    public static int countLines(File file) throws IOException {
+        int lines = 0;
+
+        FileInputStream fis = new FileInputStream(file);
+        byte[] buffer = new byte[8 * 1024];
+        int read;
+
+        while ((read = fis.read(buffer)) != -1) {
+            for (int i = 0; i < read; i++) {
+                if (buffer[i] == '\n') lines++;
+            }
+        }
+
+        fis.close();
+
+        return lines;
     }
 }
