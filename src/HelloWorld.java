@@ -145,7 +145,7 @@ public class HelloWorld {
                     System.out.println("No definitions for '" + inputWords[0] + "' were found :(");
                     String[] similarWords = similarityDetector.findClosest(inputWords[0], numSimilarWords);
                     System.out.print("Possible Matches:");
-                    for (int i = 0; i < numSimilarWords; i++) {
+                    for (int i = 0; i < similarWords.length; i++) {
                         System.out.print(" " + similarWords[i]);
                     }
                     System.out.println("\n-- Please note that not every word is in the dictionary --\n");
@@ -253,17 +253,51 @@ class StringSimilarity {
         return costs[s2.length()];
     }
 
+    public static int similarity2(String s1, String s2)
+    {
+        s1 = s1.toLowerCase();
+        s2 = s2.toLowerCase();
+        
+        int[] cost = new int[s2.length() + 1];
+        
+        // fill first row
+        for(int i = 0; i < cost.length; i++)
+            cost[i] = i;
+
+        for(int i = 1; i <= s1.length(); i++)
+        {
+            int prevValue = i;
+
+            for(int j = 1; j <= s2.length(); j++)
+            {
+                int top = cost[j] + 1;
+                int left = prevValue + 1;
+                int diag = cost[j - 1] + ((s1.charAt(i-1) == s2.charAt(j-1)) ? 0 : 1);
+
+                int value = Math.min(Math.min(top, left), diag);
+
+                // shuffle in
+                cost[j-1] = prevValue;
+                prevValue = value;
+            }
+
+            cost[s2.length()] = prevValue;
+        }
+
+        return cost[s2.length()];
+    }
+
     //Compare one word with every word in the words.txt file and return the top howMany words
     public String[] findClosest(String base, int howMany) {
         ArrayList<StringScore> temp = new ArrayList<StringScore>();
         if (howMany == 0) {return null;}
         for (int i = 0; i < everyWord.size(); i++) {
-            StringScore current = new StringScore(everyWord.get(i),(int)(similarity(everyWord.get(i), base) * 100));
+            StringScore current = new StringScore(everyWord.get(i),(int)(similarity2(everyWord.get(i), base)));
             if (temp.isEmpty()) {
                 temp.add(current);
             } else {
                 for (int j=0; j<temp.size(); j++) {
-                    if (current.getScore() > temp.get(j).getScore()) {
+                    if (current.getScore() < temp.get(j).getScore()) {
                         temp.add(j,current);
                         break;
                     }
@@ -273,6 +307,7 @@ class StringSimilarity {
                 }
             }
         }
+
         String[] returnArr = new String[howMany];
         for (int i=0; i<temp.size(); i++) {
             returnArr[i] = temp.get(i).getString();
