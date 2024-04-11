@@ -249,9 +249,9 @@ class StringSimilarity {
     {
         s1 = s1.toLowerCase();
         s2 = s2.toLowerCase();
-        
+
         int[] cost = new int[s2.length() + 1];
-        
+
         // fill first row
         for(int i = 0; i < cost.length; i++)
             cost[i] = i;
@@ -281,7 +281,7 @@ class StringSimilarity {
 
     //Compare one word with every word in the words.txt file and return the top howMany words
     public String[] findClosest(String base, int howMany) {
-        ArrayList<StringScore> temp = new ArrayList<StringScore>();
+        ArrayList<StringScore> temp = new ArrayList<>();
         if (howMany == 0) {return null;}
         for (int i = 0; i < everyWord.size(); i++) {
             StringScore current = new StringScore(everyWord.get(i),(int)(similarity2(everyWord.get(i), base)));
@@ -382,7 +382,7 @@ class CheckFile {
     }
     private static String[] breakWord(String word) {
         //First, remove special characters
-        word = word.replaceAll("[\\\\!?&_,.:;{}|()\\-\\[\\]*/+<>=\"\']", " ");
+        word = word.replaceAll("[\\\\!?&_,.:;{}()\\-\\[\\]*/+<>=\"\']", " ");
         //Next, detect camel case
         for (int i=word.length() - 1; i > 0; i--) {
             if (Character.isLowerCase(word.charAt(i - 1)) && Character.isUpperCase(word.charAt(i))) {
