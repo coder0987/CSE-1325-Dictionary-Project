@@ -4,6 +4,7 @@ import org.json.*;
 import java.util.*;
 
 class URLConnectionReader {
+    //Reads HTTP data from the specified url
     public static BufferedReader getHTTP(String url) throws Exception {
         URL connection = new URL(url);
         URLConnection yc = connection.openConnection();
@@ -11,6 +12,7 @@ class URLConnectionReader {
                 new InputStreamReader(
                         yc.getInputStream()));
     }
+    //turns the read HTTP data into a JSON object
     public static JSONObject getJSONFromBufferedReader(BufferedReader br) throws IOException {
         String inputLine;
         StringBuilder finalJSON = new StringBuilder();
@@ -26,6 +28,7 @@ class URLConnectionReader {
         return new JSONObject(finalJSON.toString());
     }
 
+    //All-in-one function with error handling to make fetching HTTP data convenient
     public static JSONObject apiFetch(String url) {
         try {
             return getJSONFromBufferedReader(getHTTP(url));
@@ -103,7 +106,6 @@ public class HelloWorld {
 
         mainloop:
         while (!exitProgram) {
-            boolean optionRan = false;
 
             System.out.println("Enter '--end' to stop. Use '--help' for a list of all commands");
             System.out.println("What word would you like to define?");
@@ -316,6 +318,7 @@ class StringSimilarity {
     }
 }
 
+//Combines a String with a Score so they can be put together in an ArrayList easily
 class StringScore {
     String string;
     int score;
@@ -363,9 +366,10 @@ class CheckFile {
                         if (w.isEmpty() || w.matches(".*\\d.*") || w.length() == 1) {
                             continue;
                         }
+                        //If the word is not in the word list, find similar words and print out the suggestions
                         if (!sd.checkWord(w)) {
                             String[] sugs = sd.findClosest(w, 3);
-                            pb.clear();
+                            ProgressBar.clear();
                             System.out.print(w + ":");
                             for (String sug : sugs)
                                 System.out.print(" " + sug);
@@ -397,6 +401,7 @@ class Hangman {
     public static void playHangman(Scanner sc, StringSimilarity similarityDetector) {
         System.out.println("Welcome to Hangman!");
 
+        //Choose a random word that has a definition
         char[] usedLetters = new char[26];
         String game = Hangman.getRandomAlphabetic(similarityDetector);
         int numGuesses = 8;
@@ -405,6 +410,7 @@ class Hangman {
         for (int i=0; i<game.length(); i++) {
             currentGuess += "_";
         }
+        //Hangman menu. Loop until you run out of guesses or solve the word
         while (numGuesses > 0 && !currentGuess.equals(game)) {
             System.out.println("You have " + numGuesses + " guess" + (numGuesses == 1 ? "" : "es") + " remaining.\nUsed letters:");
             for (char c : usedLetters) {if (c != 0) {System.out.print(c);}}
